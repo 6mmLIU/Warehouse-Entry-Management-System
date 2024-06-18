@@ -1,0 +1,397 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <algorithm> // for sort
+#include <cstdlib> // for exit
+using namespace std;
+
+class Information {
+public:
+    int num1; // 入库编号
+    int rklx; // 入库类型
+    int num2; // 入库产品编号
+    int sj1[3]; // 生产日期
+    float dj; // 入库产品单价
+    int sl; // 入库产品数量
+    int num3; // 仓库编号
+    string name; // 经办人
+    int sj2[3]; // 入库日期
+
+    static const int MAX_ENTRIES = 10;
+    static vector<Information> inf;
+
+    // 构造函数，初始化所有成员变量
+    Information()
+        : num1(0), rklx(0), num2(0), dj(0.0f), sl(0), num3(0), name(""), sj1{ 0, 0, 0 }, sj2{ 0, 0, 0 } {}
+
+    static int login(const string& password);
+    static int readFromFile();
+    static void writeToFile();
+    static int deleteInf(int delete_num1);
+    static void print();
+    static void pailian();
+    static bool unique(int peoinf);
+    static float add();
+    static int f1(int length);
+    static void queryInfo(int infnum);
+    static void rukuriqi(int year, int month, int day);
+    static void zhidinggeshi(int j);
+};
+
+vector<Information> Information::inf;
+
+int Information::login(const string& password) {
+    static string key = "123";
+    return password == key ? 1 : 0;
+}
+
+int Information::readFromFile() {
+    ifstream file("FILENAME.txt", ios::binary);
+    int i = 0;
+    if (file.is_open()) {
+        Information info;
+        while (file.read(reinterpret_cast<char*>(&info), sizeof(Information)) && i < MAX_ENTRIES) {
+            inf.push_back(info);
+            ++i;
+        }
+        file.close();
+    }
+    return i;
+}
+
+void Information::writeToFile() {
+    ofstream file("FILENAME.txt", ios::binary);
+    if (!file) {
+        cerr << "打开文件出错！" << endl;
+        exit(1);
+    }
+    for (const auto& info : inf) {
+        file.write(reinterpret_cast<const char*>(&info), sizeof(Information));
+    }
+    file.close();
+}
+
+int Information::deleteInf(int delete_num1) {
+    auto it = inf.begin();
+    while (it != inf.end()) {
+        if (it->num1 == delete_num1) {
+            cout << "找到啦! 它的入库编号是: " << it->num1 << endl;
+            cout << "入库产品编号为: " << it->num2 << endl;
+            cout << "生产日期: " << it->sj1[0] << "年" << it->sj1[1] << "月" << it->sj1[2] << "日" << endl;
+            cout << "入库日期为: " << it->sj2[0] << "年" << it->sj2[1] << "月" << it->sj2[2] << "日" << endl;
+            cout << "仓库编号为: " << it->num3 << endl;
+            cout << "经办人为: " << it->name << endl;
+            cout << "入库产品单价为: " << it->dj << endl;
+            cout << "入库产品数量为: " << it->sl << endl;
+            cout << endl;
+            char choice;
+            cout << "你确实要删除这个入库编号吗?(Y/N)" << endl;
+            cin >> choice;
+            if (choice == 'Y' || choice == 'y') {
+                it = inf.erase(it);
+                cout << "删除成功!" << endl;
+            }
+            else {
+                ++it;
+            }
+            return inf.size();
+        }
+        ++it;
+    }
+    cout << "指定的入库编号不存在!" << endl;
+    return inf.size();
+}
+
+void Information::print() {
+    for (const auto& info : inf) {
+        cout << "入库产品编号为: " << info.num2 << endl;
+        cout << "入库编号为: " << info.num1 << endl;
+        cout << "生产日期: " << info.sj1[0] << "年" << info.sj1[1] << "月" << info.sj1[2] << "日" << endl;
+        cout << "入库日期为: " << info.sj2[0] << "年" << info.sj2[1] << "月" << info.sj2[2] << "日" << endl;
+        cout << "仓库编号为: " << info.num3 << endl;
+        cout << "经办人为: " << info.name << endl;
+        cout << "入库产品单价为: " << info.dj << endl;
+        cout << "入库产品数量为: " << info.sl << endl;
+        cout << endl;
+    }
+}
+
+void Information::pailian() {
+    sort(inf.begin(), inf.end(), [](const Information& a, const Information& b) {
+        return a.num2 < b.num2;
+        });
+}
+
+bool Information::unique(int peoinf) {
+    for (const auto& info : inf) {
+        if (info.num1 == peoinf) {
+            return false;
+        }
+    }
+    return true;
+}
+
+float Information::add() {
+    float total = 0;
+    for (const auto& info : inf) {
+        total += info.dj * info.sl;
+    }
+    return total;
+}
+
+int Information::f1(int length) {
+    while (length < MAX_ENTRIES) {
+        Information info;
+        cout << "请输入产品入库操作管理系统（以入库编号为0结束）：\n";
+        while (true) {
+            cout << "请输入入库编号: ";
+            cin >> info.num1;
+            if (info.num1 == 0) {
+                return length;
+            }
+            if (unique(info.num1)) break;
+            cout << "该信息已经存在，请重新输入！\n";
+        }
+        cout << "请选择 入库类型: \n";
+        cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+        cout << "*                                                  *\n";
+        cout << "*     1: 采购入库    2: 生产入库  3: 入库产品      *\n";
+        cout << "*                                                  *\n";
+        cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+        cin >> info.rklx;
+        switch (info.rklx) {
+        case 1: cout << " 采购入库\n 客户编号为供应商"; break;
+        case 2: cout << "采购入库\n"; break;
+        case 3: cout << "采购入库\n 客户编号为退货入库"; break;
+        default: cout << "error\n";
+        }
+        cout << "请输入 入库产品编号: ";
+        cin >> info.num2;
+        cout << "请输入 生产日期: \n";
+        cout << "生产年份为：";
+        cin >> info.sj1[0];
+        cout << "生产月份为：";
+        cin >> info.sj1[1];
+        cout << "生产日期为：";
+        cin >> info.sj1[2];
+        cout << "请输入 入库产品单价: ";
+        cin >> info.dj;
+        cout << "请输入 入库产品数量: ";
+        cin >> info.sl;
+        cout << "请输入 仓库编号: ";
+        cin >> info.num3;
+        cout << "请输入 经办人: ";
+        cin >> info.name;
+        cout << "请输入 入库日期: \n";
+        cout << "入库年份为：";
+        cin >> info.sj2[0];
+        cout << "入库月份为：";
+        cin >> info.sj2[1];
+        cout << "入库日期为：";
+        cin >> info.sj2[2];
+
+        inf.push_back(info);
+        ++length;
+    }
+    return length;
+}
+
+void Information::queryInfo(int infnum) {
+    for (const auto& info : inf) {
+        if (info.num2 == infnum) {
+            cout << "找到啦！它的全部记录为\n";
+            cout << "入库产品编号为: " << info.num2 << endl;
+            cout << "入库编号为: " << info.num1 << endl;
+            cout << "生产日期: " << info.sj1[0] << "年" << info.sj1[1] << "月" << info.sj1[2] << "日" << endl;
+            cout << "入库日期为: " << info.sj2[0] << "年" << info.sj2[1] << "月" << info.sj2[2] << "日" << endl;
+            cout << "仓库编号为: " << info.num3 << endl;
+            cout << "经办人为: " << info.name << endl;
+            cout << "入库产品单价为: " << info.dj << endl;
+            cout << "入库产品数量为: " << info.sl << endl;
+            return;
+        }
+    }
+    cout << "不存在！\n";
+}
+
+void Information::rukuriqi(int year, int month, int day) {
+    if (!(year >= 1949 && year <= 2010 && month >= 1 && month <= 12 && day >= 1 && day <= 31)) {
+        cout << "输入错误！！\n";
+        return;
+    }
+    bool found = false;
+    for (const auto& info : inf) {
+        if (info.sj2[0] == year && info.sj2[1] == month && info.sj2[2] == day) {
+            if (!found) {
+                cout << "找到啦！它的全部记录为\n";
+                found = true;
+            }
+            cout << "入库产品编号为: " << info.num2 << endl;
+            cout << "入库编号为: " << info.num1 << endl;
+            cout << "生产日期: " << info.sj1[0] << "年" << info.sj1[1] << "月" << info.sj1[2] << "日" << endl;
+            cout << "入库日期为: " << info.sj2[0] << "年" << info.sj2[1] << "月" << info.sj2[2] << "日" << endl;
+            cout << "仓库编号为: " << info.num3 << endl;
+            cout << "经办人为: " << info.name << endl;
+            cout << "入库产品单价为: " << info.dj << endl;
+            cout << "入库产品数量为: " << info.sl << endl;
+            cout << endl;
+        }
+    }
+    if (!found) {
+        cout << "sorry!!!没有找到!!!\n";
+    }
+}
+
+void Information::zhidinggeshi(int j) {
+    for (const auto& info : inf) {
+        switch (j) {
+        case 1:
+            cout << "入库编号为: " << info.num1 << endl;
+            break;
+        case 2:
+            cout << "入库产品编号: " << info.num2 << endl;
+            break;
+        case 3:
+            cout << "生产日期为: " << info.sj1[0] << "年" << info.sj1[1] << "月" << info.sj1[2] << "日" << endl;
+            break;
+        case 4:
+            cout << "入库产品单价为: " << info.dj << endl;
+            break;
+        case 5:
+            cout << "入库日期为: " << info.sj2[0] << "年" << info.sj2[1] << "月" << info.sj2[2] << "日" << endl;
+            break;
+        case 6:
+            cout << "入库产品数量为: " << info.sl << endl;
+            break;
+        case 7:
+            cout << "仓库编号为: " << info.num3 << endl;
+            break;
+        case 8:
+            cout << "经办人为: " << info.name << endl;
+            break;
+        default:
+            cout << "error\n";
+            break;
+        }
+    }
+}
+
+int main() {
+    int length = Information::readFromFile();
+    int s = 0;
+    string password;
+
+    // 验证用户的口令，直到正确为止
+    do {
+        cout << "请输入操作密码：";
+        cin >> password;
+        s = Information::login(password);
+    } while (s == 0);
+
+    while (true) {
+        cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+        cout << "+              产品入库操作管理系统                     +\n";
+        cout << "+                                                       +\n";
+        cout << "+            1. 输入入库信息记录                        +\n";
+        cout << "+            2. 用指定格式显示全部记录                  +\n";
+        cout << "+            3. 根据入库产品编号查找记录                +\n";
+        cout << "+            4. 根据入库日期查找记录                    +\n";
+        cout << "+            5. 根据入库编号删除记录                    +\n";
+        cout << "+            6. 按入库产品编号从小到大显示记录          +\n";
+        cout << "+            7. 统计所有生产入库产品的总金额            +\n";
+        cout << "+            8. 程序结束                                +\n";
+        cout << "+                                                       +\n";
+        cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+
+        int i;
+        cout << "请输入您要操作的指令序号: ";
+        cin >> i;
+        switch (i) {
+            int j, infnum, delete_num1, year, month, day;
+            float add_money;
+            char choice;
+        case 1:
+            length = Information::f1(length);
+            cout << "\n现有" << length << "个信息\n";
+            Information::writeToFile();
+            break;
+        case 2:
+            do {
+                cout << "\n++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+                cout << "*                                                  *\n";
+                cout << "*       1: 入库编号         2: 入库产品编号        *\n";
+                cout << "*       3: 生产日期         4: 入库产品单价        *\n";
+                cout << "*       5: 入库日期         6: 入库产品数量        *\n";
+                cout << "*       7: 仓库编号         8: 经办人              *\n";
+                cout << "*                                                  *\n";
+                cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+                cout << "请输入你要操作的序号: ";
+                cin >> j;
+                Information::zhidinggeshi(j);
+                cout << "要继续输入吗(y/n): ";
+                cin >> choice;
+            } while (choice == 'y' || choice == 'Y');
+            break;
+        case 3:
+            do {
+                cout << "请输入要查的入库产品编号: ";
+                cin >> infnum;
+                Information::queryInfo(infnum);
+                cout << "要继续查找吗(y/n): ";
+                cin >> choice;
+            } while (choice == 'y' || choice == 'Y');
+            break;
+        case 4:
+            do {
+                cout << "根据入库日期查找记录\n";
+                cout << "请输入 入库日期: \n";
+                cout << "入库年份为：";
+                cin >> year;
+                cout << "入库月份为：";
+                cin >> month;
+                cout << "入库日期为：";
+                cin >> day;
+                Information::rukuriqi(year, month, day);
+                cout << "要继续查找吗(y/n): ";
+                cin >> choice;
+            } while (choice == 'y' || choice == 'Y');
+            break;
+        case 5:
+            do {
+                cout << "根据入库编号删除记录\n";
+                cout << "请输入要删除的入库编号: ";
+                cin >> delete_num1;
+                length = Information::deleteInf(delete_num1);
+                cout << "\n现还有" << length << "个信息\n";
+                Information::writeToFile();
+                cout << "要继续删除记录吗(y/n): ";
+                cin >> choice;
+            } while (choice == 'y' || choice == 'Y');
+            break;
+        case 6:
+            cout << "按入库产品编号从小到大显示记录\n";
+            Information::pailian();
+            Information::print();
+            Information::writeToFile();
+            cout << "排练成功！\n\n";
+            break;
+        case 7:
+            cout << "统计所有生产入库产品的总金额\n";
+            add_money = Information::add();
+            cout << "生产入库产品的总金额为: " << add_money << endl;
+            break;
+        case 8:
+            Information::writeToFile();
+            cout << "您确定要结束吗(y/n): ";
+            cin >> choice;
+            if (choice == 'y' || choice == 'Y') {
+                return 0;
+            }
+            break;
+        default:
+            cout << "error\n";
+            break;
+        }
+    }
+}
